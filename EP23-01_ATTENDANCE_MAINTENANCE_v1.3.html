@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EP23-01 Log">
+  <meta name="theme-color" content="#0C2E24">
+  <title>Exergy3 – EP23-01 Log</title>
+  <link rel="icon" type="image/jpeg" href="https://www.exergy3.com/wp-content/uploads/2025/09/cropped-66437fda329f7cabeec0ecfa_favicon-32-270x270.jpg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+      --orange: #E87928; --orange-light: #F09848; --orange-pale: rgba(232,121,40,0.09);
+      --teal: #0C2E24; --teal-medium: #1a4a3a; --teal-light: #2a6a54; --teal-pale: rgba(12,46,36,0.06);
+      --bg: #ffffff; --panel-bg: #f8f9fa; --panel-border: #e2e5e9;
+      --text: #0C2E24; --text-secondary: #5a6b64; --text-dim: #8a9590;
+      --success: #1a8a4a; --warning: #d48a08; --danger: #cc3333;
+      --flag-purple: #6b3fa0; --flag-purple-pale: rgba(107,63,160,0.08);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    input,select,textarea,button { font-family:inherit; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; overflow-x:hidden; }
+
+    /* ══════════════ PIN ══════════════ */
+    #pin-gate { position:fixed; inset:0; background:var(--teal); display:flex; align-items:center; justify-content:center; z-index:9999; }
+    .pin-box { background:var(--bg); border-radius:16px; padding:36px 28px; width:300px; box-shadow:0 24px 64px rgba(0,0,0,0.35); }
+    .pin-logo { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+    .pin-wordmark { font-size:20px; font-weight:800; color:var(--teal); letter-spacing:-0.03em; }
+    .pin-wordmark span { color:var(--orange); }
+    .pin-sub { font-size:11px; color:var(--text-dim); margin-bottom:24px; padding-left:2px; }
+    .pin-label { font-size:11px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; display:block; }
+    .pin-input { width:100%; padding:13px 14px; border:1.5px solid var(--teal-light); border-radius:8px; font-size:22px; font-family:'JetBrains Mono',monospace; letter-spacing:0.35em; color:var(--teal); outline:none; text-align:center; margin-bottom:10px; }
+    .pin-input:focus { border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-pale); }
+    .pin-error { font-size:11px; color:var(--danger); text-align:center; min-height:16px; margin-bottom:10px; }
+    .pin-btn { width:100%; padding:13px; background:var(--orange); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:background 0.15s; letter-spacing:0.01em; }
+    .pin-btn:hover { background:var(--orange-light); }
+
+    /* ══════════════ APP ══════════════ */
+    #app { display:none; flex-direction:column; min-height:100vh; }
+
+    /* ══════════════ BRANDED HEADER ══════════════ */
+    .app-header {
+      background:var(--teal);
+      padding:0 16px;
+      display:flex; align-items:center; gap:12px;
+      position:sticky; top:0; z-index:50;
+      height:54px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.18);
+    }
+    .header-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .header-bars { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+    .header-bars .bar { height:3.5px; border-radius:1px; background:var(--orange); }
+    .header-bars .bar { width:20px; }
+    .header-wordmark { font-size:17px; font-weight:800; color:#fff; letter-spacing:-0.03em; line-height:1; }
+    .header-wordmark span { color:var(--orange); }
+    .header-divider { width:1px; height:20px; background:rgba(255,255,255,0.2); margin:0 2px; }
+    .header-project { font-size:11px; font-weight:600; color:rgba(255,255,255,0.65); letter-spacing:0.04em; font-family:'JetBrains Mono',monospace; }
+    .header-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .conn-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.3); flex-shrink:0; transition:background 0.3s; }
+    .conn-dot.online { background:#4ade80; }
+    .conn-dot.offline { background:#f87171; }
+    .conn-label { font-size:10px; color:rgba(255,255,255,0.5); }
+
+    /* ══════════════ STATUS STRIP ══════════════ */
+    .status-strip { background:var(--teal-pale); border-bottom:1px solid var(--panel-border); padding:7px 16px; display:flex; align-items:center; gap:8px; overflow-x:auto; }
+    .site-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:600; background:var(--panel-bg); border:1px solid var(--panel-border); color:var(--text-secondary); white-space:nowrap; transition:all 0.15s; }
+    .site-pill.active { background:rgba(26,138,74,0.08); border-color:rgba(26,138,74,0.3); color:var(--success); }
+    .site-pill .pdot { width:5px; height:5px; border-radius:50%; background:var(--text-dim); }
+    .site-pill.active .pdot { background:var(--success); }
+    .work-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:600; background:var(--panel-bg); border:1px solid var(--panel-border); color:var(--text-secondary); white-space:nowrap; }
+    .work-pill.active { background:rgba(212,138,8,0.08); border-color:rgba(212,138,8,0.4); color:var(--warning); }
+    .work-pill .pdot { width:5px; height:5px; border-radius:50%; background:var(--text-dim); }
+    .work-pill.active .pdot { background:var(--warning); animation:blink 1.4s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.25} }
+    .strip-spacer { flex:1; }
+
+    /* ══════════════ OFFLINE ══════════════ */
+    .offline-banner { background:rgba(212,138,8,0.12); border-bottom:1px solid rgba(212,138,8,0.3); padding:6px 16px; text-align:center; font-size:11px; font-weight:500; color:var(--warning); display:none; }
+    .offline-banner.visible { display:block; }
+
+    /* ══════════════ TABS ══════════════ */
+    .tab-bar { display:flex; background:var(--panel-bg); border-bottom:1px solid var(--panel-border); }
+    .tab-btn { flex:1; padding:12px 4px; border:none; background:none; font-size:11px; font-weight:600; color:var(--text-dim); cursor:pointer; transition:all 0.15s; border-bottom:2.5px solid transparent; line-height:1.3; }
+    .tab-btn.active { color:var(--orange); border-bottom-color:var(--orange); }
+    .tab-btn:hover:not(.active) { color:var(--teal); }
+    .tab-panel { display:none; flex:1; flex-direction:column; }
+    .tab-panel.active { display:flex; }
+
+    /* ══════════════ FORM AREA ══════════════ */
+    .form-area { padding:16px; border-bottom:1px solid var(--panel-border); }
+
+    /* ══════════════ MODE TOGGLE ══════════════ */
+    .mode-toggle { display:flex; border:1.5px solid var(--panel-border); border-radius:8px; overflow:hidden; margin-bottom:16px; }
+    .mode-btn { flex:1; padding:11px 8px; border:none; background:var(--panel-bg); font-size:13px; font-weight:600; color:var(--text-dim); cursor:pointer; transition:all 0.15s; }
+    .mode-btn+.mode-btn { border-left:1.5px solid var(--panel-border); }
+    .mode-btn.active-in   { background:var(--orange); color:#fff; }
+    .mode-btn.active-out  { background:var(--success); color:#fff; }
+    .mode-btn:hover:not(.active-in):not(.active-out) { background:var(--teal-pale); color:var(--teal); }
+
+    /* ══════════════ SECTIONS ══════════════ */
+    .section { background:var(--bg); margin-bottom:8px; border-radius:8px; overflow:hidden; border:1px solid var(--panel-border); }
+    .section-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; cursor:pointer; user-select:none; background:var(--orange); color:#fff; transition:background 0.1s; }
+    .section-header:hover { background:var(--orange-light); }
+    .section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .section-chevron { font-size:10px; opacity:0.8; transition:transform 0.2s; }
+    .section.collapsed .section-chevron { transform:rotate(-90deg); }
+    .section.collapsed .section-body { display:none; }
+    .section.collapsed .section-header { background:var(--teal); border-radius:6px; }
+    .section.collapsed .section-header:hover { background:var(--teal-medium); }
+    .section-body { padding:14px; }
+
+    /* ══════════════ INPUTS ══════════════ */
+    .input-group { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+    .input-group:last-child { margin-bottom:0; }
+    .input-group label { font-size:11px; font-weight:500; color:var(--text-secondary); }
+    .input-group input, .input-group textarea { background:var(--bg); border:1.5px solid var(--teal-light); border-radius:6px; color:var(--text); padding:10px 12px; font-size:14px; outline:none; transition:border-color 0.2s; width:100%; }
+    .input-group input:focus, .input-group textarea:focus { border-color:var(--orange); box-shadow:0 0 0 2px var(--orange-pale); }
+    .input-group textarea { resize:vertical; min-height:72px; font-size:13px; line-height:1.5; }
+    .input-group input[type="datetime-local"] { font-family:'JetBrains Mono',monospace; font-size:12px; }
+    .input-group select { background:var(--bg); border:1.5px solid var(--teal-light); border-radius:6px; color:var(--text); padding:10px 32px 10px 12px; font-size:14px; font-family:'Inter',sans-serif; outline:none; cursor:pointer; width:100%; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%235a6b64' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat:no-repeat; background-position:right 12px center; transition:border-color 0.2s; }
+    .input-group select:focus { border-color:var(--orange); box-shadow:0 0 0 2px var(--orange-pale); }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+    /* ══════════════ RAMS PACK ══════════════ */
+    .rams-block { background:rgba(232,121,40,0.05); border:1.5px solid rgba(232,121,40,0.25); border-radius:8px; padding:12px; margin-bottom:12px; }
+    .rams-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--orange); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .rams-label::before { content:'📋'; font-size:12px; }
+
+    /* ══════════════ DATA FLAG ══════════════ */
+    .flag-block { background:var(--flag-purple-pale); border:1.5px solid rgba(107,63,160,0.25); border-radius:8px; padding:12px; margin-bottom:12px; }
+    .flag-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--flag-purple); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .flag-label::before { content:'⚑'; font-size:13px; }
+    .flag-toggle { display:flex; align-items:center; gap:8px; margin-bottom:0; padding:8px 10px; background:var(--flag-purple-pale); border-radius:6px; font-size:12px; color:var(--text-secondary); cursor:pointer; border:1.5px solid rgba(107,63,160,0.15); }
+    .flag-toggle input[type="checkbox"] { accent-color:var(--flag-purple); cursor:pointer; width:16px; height:16px; flex-shrink:0; }
+    .flag-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+    .flag-type-btn { padding:8px 6px; border-radius:6px; border:1.5px solid rgba(107,63,160,0.2); background:var(--bg); font-size:11px; font-weight:600; cursor:pointer; text-align:center; transition:all 0.15s; color:var(--flag-purple); }
+    .flag-type-btn:hover { border-color:var(--flag-purple); background:var(--flag-purple-pale); }
+    .flag-type-btn.selected { background:var(--flag-purple); color:#fff; border-color:var(--flag-purple); }
+
+    /* ══════════════ RETRO ROW ══════════════ */
+    .retro-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:8px 10px; background:var(--teal-pale); border-radius:6px; font-size:12px; color:var(--text-secondary); cursor:pointer; }
+    .retro-row input[type="checkbox"] { accent-color:var(--orange); cursor:pointer; width:15px; height:15px; flex-shrink:0; }
+
+    /* ══════════════ REASON GRID ══════════════ */
+    .reason-grid { display:flex; flex-direction:column; gap:6px; }
+    .reason-btn { padding:11px 14px; border-radius:8px; border:1.5px solid var(--panel-border); background:var(--panel-bg); cursor:pointer; transition:all 0.15s; text-align:left; width:100%; display:flex; align-items:center; gap:10px; }
+    .reason-btn:hover { border-color:var(--orange); background:var(--orange-pale); }
+    .reason-btn.selected { border-color:var(--orange); background:var(--orange-pale); }
+    .reason-icon { font-size:16px; flex-shrink:0; width:24px; text-align:center; }
+    .reason-label { font-size:13px; font-weight:600; color:var(--teal); display:block; }
+    .reason-sub { font-size:10px; color:var(--text-dim); display:block; margin-top:1px; }
+
+    /* ══════════════ ASSET GRID ══════════════ */
+    .asset-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .asset-btn { padding:12px 10px; border-radius:8px; border:1.5px solid var(--panel-border); background:var(--panel-bg); cursor:pointer; transition:all 0.15s; text-align:left; position:relative; }
+    .asset-btn:hover { border-color:var(--orange); }
+    .asset-btn.selected { border-color:var(--orange); background:var(--orange-pale); }
+    .asset-btn.selected::after { content:'✓'; position:absolute; top:6px; right:8px; font-size:10px; font-weight:700; color:var(--orange); }
+    .asset-id   { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:2px; }
+    .asset-name { font-size:12px; font-weight:600; color:var(--teal); line-height:1.3; }
+    .asset-hint { font-size:10px; color:var(--text-dim); margin-top:6px; font-style:italic; }
+
+    /* ══════════════ PRIORITY ══════════════ */
+    .priority-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+    .priority-btn { padding:9px 4px; border-radius:6px; border:1.5px solid var(--panel-border); background:var(--panel-bg); font-size:11px; font-weight:600; cursor:pointer; text-align:center; transition:all 0.15s; color:var(--text-secondary); }
+    .priority-btn:hover { border-color:var(--teal); color:var(--teal); }
+    .priority-btn.sel-low     { background:rgba(26,138,74,0.1);  border-color:var(--success); color:var(--success); }
+    .priority-btn.sel-medium  { background:rgba(12,46,36,0.07);  border-color:var(--teal);    color:var(--teal); }
+    .priority-btn.sel-high    { background:rgba(212,138,8,0.1);  border-color:var(--warning); color:var(--warning); }
+    .priority-btn.sel-critical{ background:rgba(204,51,51,0.1);  border-color:var(--danger);  color:var(--danger); }
+
+    /* ══════════════ ACTIVE WORK CARDS ══════════════ */
+    .active-work-list { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+    .active-work-card { background:rgba(212,138,8,0.05); border:1.5px solid rgba(212,138,8,0.35); border-radius:10px; padding:14px; }
+    .awc-header { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px; }
+    .awc-assets { flex:1; display:flex; flex-wrap:wrap; gap:4px; }
+    .awc-asset-tag { display:inline-flex; align-items:center; background:rgba(212,138,8,0.12); border:1px solid rgba(212,138,8,0.3); border-radius:4px; padding:2px 8px; font-size:10px; font-weight:600; color:var(--warning); font-family:'JetBrains Mono',monospace; }
+    .awc-timer-block { text-align:right; flex-shrink:0; }
+    .awc-timer { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:600; color:var(--warning); letter-spacing:0.04em; }
+    .awc-timer-label { font-size:9px; color:var(--text-dim); text-align:right; text-transform:uppercase; letter-spacing:0.08em; }
+    .awc-name  { font-size:13px; font-weight:600; color:var(--teal); }
+    .awc-role  { font-size:11px; color:var(--text-dim); margin-bottom:2px; }
+    .awc-since { font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono',monospace; margin-bottom:10px; }
+    .awc-flag-indicator { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:var(--flag-purple); background:var(--flag-purple-pale); border:1px solid rgba(107,63,160,0.2); border-radius:4px; padding:2px 8px; margin-bottom:8px; }
+    .awc-stop-btn { width:100%; padding:11px; background:var(--warning); color:#fff; border:none; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
+    .awc-stop-btn:hover { background:#b87a06; }
+
+    /* ══════════════ CLOSE-OUT SHEET ══════════════ */
+    #closeout-overlay { position:fixed; inset:0; background:rgba(12,46,36,0.65); z-index:200; display:none; align-items:flex-end; justify-content:center; }
+    #closeout-overlay.open { display:flex; }
+    .closeout-sheet { background:var(--bg); border-radius:16px 16px 0 0; padding:20px 16px 32px; width:100%; max-width:520px; max-height:92vh; overflow-y:auto; }
+    .closeout-handle { width:36px; height:4px; background:var(--panel-border); border-radius:2px; margin:0 auto 16px; }
+    .closeout-title { font-size:15px; font-weight:700; color:var(--teal); margin-bottom:3px; }
+    .closeout-meta  { font-size:11px; color:var(--text-dim); font-family:'JetBrains Mono',monospace; margin-bottom:14px; }
+    .closeout-duration { background:rgba(212,138,8,0.08); border:1.5px solid rgba(212,138,8,0.3); border-radius:8px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+    .cd-label { font-size:10px; color:var(--warning); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+    .cd-value { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; color:var(--warning); }
+    .cd-started-label { font-size:10px; color:var(--text-dim); text-align:right; }
+    .cd-started-val   { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--teal); text-align:right; }
+
+    /* ══════════════ BUTTONS ══════════════ */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:13px 18px; border-radius:8px; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all 0.15s; }
+    .btn-primary  { background:var(--orange); color:#fff; }
+    .btn-primary:hover  { background:var(--orange-light); }
+    .btn-success  { background:var(--success); color:#fff; }
+    .btn-success:hover  { background:#158040; }
+    .btn-warning  { background:var(--warning); color:#fff; }
+    .btn-warning:hover  { background:#b87a06; }
+    .btn-secondary{ background:var(--teal); color:#fff; }
+    .btn-secondary:hover{ background:var(--teal-medium); }
+    .btn-ghost    { background:transparent; border:1.5px solid var(--panel-border); color:var(--text-secondary); }
+    .btn-ghost:hover    { border-color:var(--teal); color:var(--teal); }
+    .btn-full { width:100%; }
+    .btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .btn-row { display:flex; gap:8px; margin-top:12px; }
+
+    /* ══════════════ SESSION CARDS ══════════════ */
+    .session-found { background:rgba(26,138,74,0.06); border:1.5px solid rgba(26,138,74,0.3); border-radius:8px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:all 0.15s; }
+    .session-found:hover,.session-found.selected { border-color:var(--success); outline:2px solid var(--success); }
+    .sf-label { font-size:10px; color:var(--success); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
+    .sf-name  { font-size:14px; font-weight:700; color:var(--teal); margin-bottom:2px; }
+    .sf-meta  { font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--text-dim); }
+    .no-session { background:rgba(204,51,51,0.05); border:1.5px solid rgba(204,51,51,0.2); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--danger); }
+
+    /* ══════════════ HELP ══════════════ */
+    .help-text { font-size:10px; color:var(--text-dim); line-height:1.5; margin-top:8px; padding:8px 10px; background:var(--teal-pale); border-radius:6px; border-left:3px solid var(--teal); }
+
+    /* ══════════════ LOG ══════════════ */
+    .log-area { flex:1; padding:16px; background:var(--panel-bg); }
+    .log-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .log-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-secondary); }
+    .log-filter { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .filter-chip { padding:4px 10px; border-radius:20px; border:1px solid var(--panel-border); background:var(--bg); font-size:11px; font-weight:500; color:var(--text-dim); cursor:pointer; transition:all 0.15s; }
+    .filter-chip.active { background:var(--orange-pale); border-color:var(--orange); color:var(--orange); }
+    .filter-chip:hover:not(.active) { border-color:var(--teal); color:var(--teal); }
+    .log-list { display:flex; flex-direction:column; gap:8px; }
+    .log-card { background:var(--bg); border:1px solid var(--panel-border); border-radius:8px; padding:12px 14px; transition:border-color 0.15s; }
+    .log-card:hover { border-color:var(--orange); }
+    .log-card.flagged { border-left:3px solid var(--flag-purple); }
+    .log-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; gap:8px; }
+    .log-card-left { flex:1; min-width:0; }
+    .log-card-eyebrow { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; color:var(--text-dim); margin-bottom:2px; }
+    .log-card-name { font-size:13px; font-weight:600; color:var(--teal); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .log-card-time { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); white-space:nowrap; }
+    .log-card-body { font-size:12px; color:var(--text-secondary); line-height:1.5; margin-top:6px; }
+    .log-card-flag { font-size:11px; color:var(--flag-purple); background:var(--flag-purple-pale); border-radius:5px; padding:5px 10px; margin-top:7px; border-left:3px solid var(--flag-purple); }
+    .log-card-flag-type { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+    .log-card-meta { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .status-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; padding:2px 8px; border-radius:4px; }
+    .badge-success  { background:rgba(26,138,74,0.1);  color:var(--success); }
+    .badge-dim      { background:var(--teal-pale);      color:var(--text-dim); }
+    .badge-warning  { background:rgba(212,138,8,0.1);  color:var(--warning); }
+    .badge-danger   { background:rgba(204,51,51,0.1);  color:var(--danger); }
+    .badge-orange   { background:var(--orange-pale);    color:var(--orange); }
+    .badge-retro    { background:rgba(90,107,100,0.1); color:var(--text-secondary); font-style:italic; }
+    .badge-flag     { background:var(--flag-purple-pale); color:var(--flag-purple); }
+    .log-empty   { text-align:center; padding:32px 16px; color:var(--text-dim); font-size:12px; }
+    .log-loading { text-align:center; padding:20px; color:var(--text-dim); font-size:11px; font-style:italic; }
+
+    /* ══════════════ EMPTY ACTIVE STATE ══════════════ */
+    .empty-active { text-align:center; padding:28px 16px; }
+    .empty-active-icon { font-size:32px; margin-bottom:8px; }
+    .empty-active-text { font-size:13px; font-weight:600; color:var(--teal); margin-bottom:4px; }
+    .empty-active-sub  { font-size:11px; color:var(--text-dim); }
+
+    /* ══════════════ TOAST ══════════════ */
+    .save-notice { position:fixed; top:70px; left:50%; transform:translateX(-50%); background:var(--teal); color:#fff; padding:8px 20px; border-radius:8px; font-size:12px; font-weight:600; z-index:9999; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.2); }
+    .save-notice.error { background:var(--danger); }
+
+    @media(min-width:640px) { .form-area,.log-area { max-width:520px; margin:0 auto; } .closeout-sheet { border-radius:16px; margin-bottom:24px; } }
+    .log-list::-webkit-scrollbar { width:4px; }
+    .log-list::-webkit-scrollbar-thumb { background:var(--panel-border); border-radius:2px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PIN GATE
+══════════════════════════════════════ -->
+<div id="pin-gate">
+  <div class="pin-box">
+    <div class="pin-logo">
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <div style="height:3.5px;width:20px;border-radius:1px;background:var(--orange);"></div>
+        <div style="height:3.5px;width:13px;border-radius:1px;background:var(--orange);"></div>
+        <div style="height:3.5px;width:20px;border-radius:1px;background:var(--orange);"></div>
+      </div>
+      <div class="pin-wordmark">Exergy<span>3</span></div>
+    </div>
+    <div class="pin-sub">EP23-01 Asset Log · Annandale</div>
+    <label class="pin-label">Enter PIN to continue</label>
+    <input class="pin-input" type="password" id="pin-input" maxlength="8" autocomplete="off" inputmode="numeric" placeholder="••••">
+    <div class="pin-error" id="pin-error"></div>
+    <button class="pin-btn" onclick="checkPin()">Unlock</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     CLOSE-OUT BOTTOM SHEET
+══════════════════════════════════════ -->
+<div id="closeout-overlay">
+  <div class="closeout-sheet">
+    <div class="closeout-handle"></div>
+    <div class="closeout-title" id="co-title">Close out work session</div>
+    <div class="closeout-meta"  id="co-meta"></div>
+
+    <div class="closeout-duration">
+      <div>
+        <div class="cd-label">Duration</div>
+        <div class="cd-value" id="co-duration">—</div>
+      </div>
+      <div>
+        <div class="cd-started-label">Started</div>
+        <div class="cd-started-val" id="co-started">—</div>
+      </div>
+    </div>
+
+    <!-- Work detail -->
+    <div class="section" id="co-sec-detail">
+      <div class="section-header" onclick="toggleSection('co-sec-detail')">
+        <span class="section-title">Work Detail</span><span class="section-chevron">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="input-group">
+          <label>Category</label>
+          <select id="co-category" onchange="onCoCategoryChange()">
+            <option value="">Select category…</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Instrumentation">Instrumentation</option>
+            <option value="Software / Controls">Software / Controls</option>
+            <option value="Civil / Structural">Civil / Structural</option>
+            <option value="Performance Testing">Performance Testing</option>
+            <option value="Functional Testing">Functional Testing</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- RAMS — shown if category is a physical maintenance type -->
+        <div id="co-rams-block" class="rams-block" style="display:none;">
+          <div class="rams-label">RAMS Pack — required for this work type</div>
+          <div class="input-group">
+            <label>RAMS Code</label>
+            <input type="text" id="co-rams-code" placeholder="e.g. RAMS-EP23-042" style="font-family:'JetBrains Mono',monospace;font-size:13px;">
+          </div>
+          <div class="input-group">
+            <label>RAMS Title</label>
+            <input type="text" id="co-rams-title" placeholder="Approved RAMS document title">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Description of work carried out</label>
+          <textarea id="co-description" placeholder="What was done, findings, follow-up actions…" style="min-height:88px;"></textarea>
+        </div>
+        <div class="input-group">
+          <label>Priority / Severity</label>
+          <div class="priority-grid" id="co-priority-grid">
+            <button class="priority-btn" data-priority="Low"      onclick="selectCoPriority(this)">Low</button>
+            <button class="priority-btn" data-priority="Medium"   onclick="selectCoPriority(this)">Medium</button>
+            <button class="priority-btn" data-priority="High"     onclick="selectCoPriority(this)">High</button>
+            <button class="priority-btn" data-priority="Critical" onclick="selectCoPriority(this)">Critical</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data flag -->
+    <div class="section" id="co-sec-flag">
+      <div class="section-header" onclick="toggleSection('co-sec-flag')" style="background:var(--flag-purple);">
+        <span class="section-title">⚑ Flag Non-Standard Data (optional)</span><span class="section-chevron">▼</span>
+      </div>
+      <div class="section-body">
+        <label class="flag-toggle" style="margin-bottom:10px;">
+          <input type="checkbox" id="co-flag-cb" onchange="toggleCoFlag(this)">
+          This session caused or coincides with anomalous data
+        </label>
+        <div id="co-flag-fields" style="display:none;">
+          <div class="input-group" style="margin-bottom:10px;">
+            <label>Flag type</label>
+            <div class="flag-type-grid">
+              <button class="flag-type-btn" data-flag="Manual Remote Operation" onclick="selectFlagType(this,'co')">Manual Remote Op.</button>
+              <button class="flag-type-btn" data-flag="Feature Test" onclick="selectFlagType(this,'co')">Feature Test</button>
+              <button class="flag-type-btn" data-flag="Sensor Disconnect" onclick="selectFlagType(this,'co')">Sensor Disconnect</button>
+              <button class="flag-type-btn" data-flag="Bypass / Override" onclick="selectFlagType(this,'co')">Bypass / Override</button>
+              <button class="flag-type-btn" data-flag="Calibration" onclick="selectFlagType(this,'co')">Calibration</button>
+              <button class="flag-type-btn" data-flag="Other Anomaly" onclick="selectFlagType(this,'co')">Other Anomaly</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Flag notes — describe the expected data impact</label>
+            <textarea id="co-flag-notes" placeholder="e.g. 'Engineer ran Module 2 remotely at 40% load to test new ramp algorithm — flow readings non-representative 14:20–15:05'" style="min-height:80px;"></textarea>
+          </div>
+          <div class="help-text">This flag will appear on maintenance records and can be queried alongside Grafana data to explain anomalies in future analysis.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grafana -->
+    <div class="section collapsed" id="co-sec-grafana">
+      <div class="section-header" onclick="toggleSection('co-sec-grafana')">
+        <span class="section-title">Grafana Annotation (optional)</span><span class="section-chevron">▼</span>
+      </div>
+      <div class="section-body">
+        <label class="retro-row">
+          <input type="checkbox" id="co-grafana-cb" onchange="toggleCoGrafana(this)">
+          Tag this session's window as a Grafana annotation
+        </label>
+        <div id="co-grafana-fields" style="display:none;">
+          <div class="two-col">
+            <div class="input-group"><label>Start</label><input type="datetime-local" id="co-grafana-start"></div>
+            <div class="input-group"><label>End</label><input type="datetime-local" id="co-grafana-end"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1;" onclick="cancelCloseout()">Cancel</button>
+      <button class="btn btn-warning" style="flex:2;" id="co-submit-btn" onclick="submitCloseout()">Complete & Save ▸</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Branded header -->
+  <header class="app-header">
+    <a class="header-logo" href="https://www.exergy3.com" target="_blank" rel="noopener">
+      <div class="header-bars">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+      <div class="header-wordmark">Exergy<span>3</span></div>
+    </a>
+    <div class="header-divider"></div>
+    <div>
+      <div class="header-project">EP23-01 · Annandale</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.03em;margin-top:1px;">v1.3</div>
+    </div>
+    <div class="header-right">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span class="conn-label" id="conn-label">—</span>
+    </div>
+  </header>
+
+  <div class="offline-banner" id="offline-banner">⚠ Offline — check connection before submitting</div>
+
+  <div class="status-strip">
+    <div class="site-pill" id="pill-site"><span class="pdot"></span> Site</div>
+    <div class="work-pill" id="pill-work"><span class="pdot"></span> Jobs</div>
+    <span class="strip-spacer"></span>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('attendance')">Attendance</button>
+    <button class="tab-btn" onclick="switchTab('maintenance')">Maint. &amp; Testing</button>
+    <button class="tab-btn" onclick="switchTab('log')">Work Log</button>
+  </div>
+
+  <!-- ════════════════════════════════════
+       ATTENDANCE TAB
+  ════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-attendance">
+    <div class="form-area">
+      <div class="mode-toggle">
+        <button class="mode-btn active-in"  id="mode-in-btn"  onclick="setAttMode('in')">Sign In</button>
+        <button class="mode-btn"            id="mode-out-btn" onclick="setAttMode('out')">Sign Out</button>
+      </div>
+
+      <!-- SIGN IN -->
+      <div id="att-in-form">
+        <div class="section" id="sec-att-person">
+          <div class="section-header" onclick="toggleSection('sec-att-person')">
+            <span class="section-title">Personnel</span><span class="section-chevron">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="input-group">
+              <label>Full name</label>
+              <input type="text" id="att-name" placeholder="Your name" autocomplete="name">
+            </div>
+            <div class="input-group">
+              <label>Role / Seniority</label>
+              <select id="att-role">
+                <option value="">Select role…</option>
+                <optgroup label="Engineering">
+                  <option>Graduate Engineer</option><option>Engineer</option><option>Senior Engineer</option>
+                  <option>Lead Engineer</option><option>Principal Engineer</option><option>Chief Engineer</option>
+                </optgroup>
+                <optgroup label="Project Management">
+                  <option>Project Manager</option><option>Senior Project Manager</option><option>Project Director</option>
+                </optgroup>
+                <optgroup label="Operations">
+                  <option>Site Technician</option><option>Senior Technician</option>
+                  <option>Site Supervisor</option><option>Operations Manager</option>
+                </optgroup>
+                <optgroup label="Commissioning">
+                  <option>Commissioning Engineer</option><option>Lead Commissioning Engineer</option>
+                </optgroup>
+                <optgroup label="Safety & Quality">
+                  <option>HSE Advisor</option><option>Quality Inspector</option>
+                </optgroup>
+                <optgroup label="Management">
+                  <option>Technical Director</option><option>Managing Director</option><option>Visitor / Observer</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="sec-att-reason">
+          <div class="section-header" onclick="toggleSection('sec-att-reason')">
+            <span class="section-title">Reason for Visit</span><span class="section-chevron">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="reason-grid">
+              <button class="reason-btn" data-reason="Commissioning" onclick="selectReason(this)">
+                <span class="reason-icon">⚙</span>
+                <span><span class="reason-label">Commissioning</span><span class="reason-sub">System start-up, performance verification</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Maintenance" onclick="selectReason(this)">
+                <span class="reason-icon">🔧</span>
+                <span><span class="reason-label">Maintenance</span><span class="reason-sub">Planned or reactive maintenance works</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Testing & Inspection" onclick="selectReason(this)">
+                <span class="reason-icon">🔬</span>
+                <span><span class="reason-label">Testing & Inspection</span><span class="reason-sub">FAT, SAT, performance testing, audits</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Data Collection" onclick="selectReason(this)">
+                <span class="reason-icon">📊</span>
+                <span><span class="reason-label">Data Collection</span><span class="reason-sub">Instrumentation reads, logging, surveys</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Engineering Review" onclick="selectReason(this)">
+                <span class="reason-icon">📋</span>
+                <span><span class="reason-label">Engineering Review</span><span class="reason-sub">Design review, HAZOP, walkdown</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Installation" onclick="selectReason(this)">
+                <span class="reason-icon">🏗</span>
+                <span><span class="reason-label">Installation</span><span class="reason-sub">Equipment fit-out, civil or mechanical works</span></span>
+              </button>
+              <button class="reason-btn" data-reason="HSE / Safety" onclick="selectReason(this)">
+                <span class="reason-icon">⛑</span>
+                <span><span class="reason-label">HSE / Safety</span><span class="reason-sub">Safety inspection, incident investigation</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Management Visit" onclick="selectReason(this)">
+                <span class="reason-icon">👤</span>
+                <span><span class="reason-label">Management / Stakeholder</span><span class="reason-sub">Investor, client, or senior leadership</span></span>
+              </button>
+              <button class="reason-btn" data-reason="Other" onclick="selectReason(this)">
+                <span class="reason-icon">···</span>
+                <span><span class="reason-label">Other</span><span class="reason-sub">Specify in notes below</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="sec-att-timing">
+          <div class="section-header" onclick="toggleSection('sec-att-timing')">
+            <span class="section-title">Notes & Timing</span><span class="section-chevron">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="input-group">
+              <label>Notes (optional)</label>
+              <textarea id="att-notes" placeholder="Work scope, visitors accompanied, additional context…"></textarea>
+            </div>
+            <label class="retro-row">
+              <input type="checkbox" id="att-retro-cb" onchange="toggleRetroFields('att-retro-cb','att-retro-area','att-retro-in')">
+              Log retrospectively — override sign-in time
+            </label>
+            <div id="att-retro-area" style="display:none;">
+              <div class="input-group"><label>Actual sign-in time</label><input type="datetime-local" id="att-retro-in"></div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="att-signin-btn" onclick="signIn()">Sign In</button>
+      </div>
+
+      <!-- SIGN OUT -->
+      <div id="att-out-form" style="display:none;">
+        <div class="section" id="sec-att-out">
+          <div class="section-header" onclick="toggleSection('sec-att-out')">
+            <span class="section-title">Find Open Session</span><span class="section-chevron">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="input-group">
+              <label>Full name</label>
+              <input type="text" id="att-out-name" placeholder="Name to sign out" autocomplete="name">
+            </div>
+            <button class="btn btn-secondary btn-full" style="margin-bottom:14px;" onclick="findSession()">Search</button>
+            <div id="session-results"></div>
+            <label class="retro-row" style="margin-top:4px;">
+              <input type="checkbox" id="att-out-retro-cb" onchange="toggleRetroFields('att-out-retro-cb','att-out-retro-area','att-retro-out')">
+              Log retrospectively — override sign-out time
+            </label>
+            <div id="att-out-retro-area" style="display:none;">
+              <div class="input-group"><label>Actual sign-out time</label><input type="datetime-local" id="att-retro-out"></div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-success btn-full" id="att-signout-btn" onclick="signOut()" disabled>Sign Out</button>
+      </div>
+    </div>
+
+    <div class="log-area">
+      <div class="log-header">
+        <span class="log-title">Recent Attendance</span>
+        <button class="filter-chip" onclick="refreshLog('attendance')">⟳ Refresh</button>
+      </div>
+      <div class="log-filter" id="att-filter">
+        <button class="filter-chip active" data-filter="all"     onclick="setFilter('att','all',this)">All</button>
+        <button class="filter-chip"        data-filter="on-site" onclick="setFilter('att','on-site',this)">On site now</button>
+      </div>
+      <div class="log-list" id="att-log-list"><div class="log-loading">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       MAINTENANCE & TESTING TAB
+  ════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-maintenance">
+    <div class="form-area">
+      <div id="active-work-area" style="margin-bottom:8px;"></div>
+
+      <div class="section" id="sec-work-new">
+        <div class="section-header" onclick="toggleSection('sec-work-new')">
+          <span class="section-title">Start New Session</span><span class="section-chevron">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="input-group">
+            <label>Engineer / Technician name</label>
+            <input type="text" id="work-name" placeholder="Your name" autocomplete="name">
+          </div>
+          <div class="input-group">
+            <label>Role / Seniority</label>
+            <select id="work-role">
+              <option value="">Select role…</option>
+              <optgroup label="Engineering">
+                <option>Graduate Engineer</option><option>Engineer</option><option>Senior Engineer</option>
+                <option>Lead Engineer</option><option>Principal Engineer</option><option>Chief Engineer</option>
+              </optgroup>
+              <optgroup label="Operations">
+                <option>Site Technician</option><option>Senior Technician</option>
+                <option>Site Supervisor</option><option>Operations Manager</option>
+              </optgroup>
+              <optgroup label="Commissioning">
+                <option>Commissioning Engineer</option><option>Lead Commissioning Engineer</option>
+              </optgroup>
+              <optgroup label="Safety & Quality">
+                <option>HSE Advisor</option><option>Quality Inspector</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Asset(s) — tap to select all involved</label>
+            <div class="asset-grid" id="work-asset-grid">
+              <button class="asset-btn" data-id="EP23-01-M1" onclick="toggleWorkAsset(this)"><span class="asset-id">EP23-01-M1</span><span class="asset-name">Module 1</span></button>
+              <button class="asset-btn" data-id="EP23-01-M2" onclick="toggleWorkAsset(this)"><span class="asset-id">EP23-01-M2</span><span class="asset-name">Module 2</span></button>
+              <button class="asset-btn" data-id="EP23-01-M3" onclick="toggleWorkAsset(this)"><span class="asset-id">EP23-01-M3</span><span class="asset-name">Module 3</span></button>
+              <button class="asset-btn" data-id="EP23-01-HRSG" onclick="toggleWorkAsset(this)"><span class="asset-id">EP23-01-HRSG</span><span class="asset-name">HRSG</span></button>
+              <button class="asset-btn" data-id="EP23-01-Electrical" onclick="toggleWorkAsset(this)"><span class="asset-id">EP23-01-ELEC</span><span class="asset-name">Electrical</span></button>
+              <button class="asset-btn" data-id="EP23-01-Site" onclick="toggleWorkAsset(this)"><span class="asset-id">EP23-01-SITE</span><span class="asset-name">Site</span></button>
+            </div>
+          </div>
+          <button class="btn btn-warning btn-full" id="work-start-btn" onclick="startWork()">▶ Start Work Session</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-area">
+      <div class="log-header">
+        <span class="log-title">Today's Sessions</span>
+        <button class="filter-chip" onclick="refreshLog('maintenance')">⟳ Refresh</button>
+      </div>
+      <div class="log-list" id="maint-log-list"><div class="log-loading">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       WORK LOG TAB
+  ════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-log">
+    <div class="form-area">
+      <div class="section collapsed" id="sec-manual-entry">
+        <div class="section-header" onclick="toggleSection('sec-manual-entry')">
+          <span class="section-title">Manual / Retrospective Entry</span><span class="section-chevron">▼</span>
+        </div>
+        <div class="section-body">
+          <div class="input-group">
+            <label>Reported by</label>
+            <input type="text" id="man-name" placeholder="Your name" autocomplete="name">
+          </div>
+          <div class="input-group">
+            <label>Role / Seniority</label>
+            <select id="man-role">
+              <option value="">Select role…</option>
+              <optgroup label="Engineering">
+                <option>Graduate Engineer</option><option>Engineer</option><option>Senior Engineer</option>
+                <option>Lead Engineer</option><option>Principal Engineer</option><option>Chief Engineer</option>
+              </optgroup>
+              <optgroup label="Operations">
+                <option>Site Technician</option><option>Senior Technician</option>
+                <option>Site Supervisor</option><option>Operations Manager</option>
+              </optgroup>
+              <optgroup label="Commissioning">
+                <option>Commissioning Engineer</option><option>Lead Commissioning Engineer</option>
+              </optgroup>
+              <optgroup label="Safety & Quality">
+                <option>HSE Advisor</option><option>Quality Inspector</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Asset(s)</label>
+            <div class="asset-grid" id="man-asset-grid">
+              <button class="asset-btn" data-id="EP23-01-M1" onclick="toggleManAsset(this)"><span class="asset-id">EP23-01-M1</span><span class="asset-name">Module 1</span></button>
+              <button class="asset-btn" data-id="EP23-01-M2" onclick="toggleManAsset(this)"><span class="asset-id">EP23-01-M2</span><span class="asset-name">Module 2</span></button>
+              <button class="asset-btn" data-id="EP23-01-M3" onclick="toggleManAsset(this)"><span class="asset-id">EP23-01-M3</span><span class="asset-name">Module 3</span></button>
+              <button class="asset-btn" data-id="EP23-01-HRSG" onclick="toggleManAsset(this)"><span class="asset-id">EP23-01-HRSG</span><span class="asset-name">HRSG</span></button>
+              <button class="asset-btn" data-id="EP23-01-Electrical" onclick="toggleManAsset(this)"><span class="asset-id">EP23-01-ELEC</span><span class="asset-name">Electrical</span></button>
+              <button class="asset-btn" data-id="EP23-01-Site" onclick="toggleManAsset(this)"><span class="asset-id">EP23-01-SITE</span><span class="asset-name">Site</span></button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Category</label>
+            <select id="man-category" onchange="onManCategoryChange()">
+              <option value="">Select category…</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Instrumentation">Instrumentation</option>
+              <option value="Software / Controls">Software / Controls</option>
+              <option value="Civil / Structural">Civil / Structural</option>
+              <option value="Performance Testing">Performance Testing</option>
+              <option value="Functional Testing">Functional Testing</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- RAMS for manual entry -->
+          <div id="man-rams-block" class="rams-block" style="display:none;">
+            <div class="rams-label">RAMS Pack — required for this work type</div>
+            <div class="input-group">
+              <label>RAMS Code</label>
+              <input type="text" id="man-rams-code" placeholder="e.g. RAMS-EP23-042" style="font-family:'JetBrains Mono',monospace;font-size:13px;">
+            </div>
+            <div class="input-group">
+              <label>RAMS Title</label>
+              <input type="text" id="man-rams-title" placeholder="Approved RAMS document title">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Description</label>
+            <textarea id="man-description" placeholder="Work carried out, findings, follow-up…" style="min-height:88px;"></textarea>
+          </div>
+          <div class="input-group">
+            <label>Priority</label>
+            <div class="priority-grid" id="man-priority-grid">
+              <button class="priority-btn" data-priority="Low"      onclick="selectManPriority(this)">Low</button>
+              <button class="priority-btn" data-priority="Medium"   onclick="selectManPriority(this)">Medium</button>
+              <button class="priority-btn" data-priority="High"     onclick="selectManPriority(this)">High</button>
+              <button class="priority-btn" data-priority="Critical" onclick="selectManPriority(this)">Critical</button>
+            </div>
+          </div>
+          <div class="two-col" style="margin-top:12px;">
+            <div class="input-group"><label>Work started</label><input type="datetime-local" id="man-start"></div>
+            <div class="input-group"><label>Work completed</label><input type="datetime-local" id="man-end"></div>
+          </div>
+
+          <!-- Data flag for manual entry -->
+          <div style="margin-top:12px;">
+            <label class="flag-toggle" style="margin-bottom:10px;border-radius:8px;">
+              <input type="checkbox" id="man-flag-cb" onchange="toggleManFlag(this)">
+              ⚑ Flag non-standard / anomalous data
+            </label>
+            <div id="man-flag-fields" style="display:none;" class="flag-block">
+              <div class="flag-label">Data Flag Details</div>
+              <div class="input-group" style="margin-bottom:10px;">
+                <label>Flag type</label>
+                <div class="flag-type-grid">
+                  <button class="flag-type-btn" data-flag="Manual Remote Operation" onclick="selectFlagType(this,'man')">Manual Remote Op.</button>
+                  <button class="flag-type-btn" data-flag="Feature Test" onclick="selectFlagType(this,'man')">Feature Test</button>
+                  <button class="flag-type-btn" data-flag="Sensor Disconnect" onclick="selectFlagType(this,'man')">Sensor Disconnect</button>
+                  <button class="flag-type-btn" data-flag="Bypass / Override" onclick="selectFlagType(this,'man')">Bypass / Override</button>
+                  <button class="flag-type-btn" data-flag="Calibration" onclick="selectFlagType(this,'man')">Calibration</button>
+                  <button class="flag-type-btn" data-flag="Other Anomaly" onclick="selectFlagType(this,'man')">Other Anomaly</button>
+                </div>
+              </div>
+              <div class="input-group">
+                <label>Flag notes — describe data impact</label>
+                <textarea id="man-flag-notes" placeholder="What data was affected and how…" style="min-height:72px;"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full" id="man-submit-btn" onclick="submitManual()" style="margin-top:14px;">Submit Entry</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-area">
+      <div class="log-header">
+        <span class="log-title">Maintenance & Testing Records</span>
+        <button class="filter-chip" onclick="refreshLog('log')">⟳ Refresh</button>
+      </div>
+      <div class="log-filter" id="log-filter">
+        <button class="filter-chip active" data-filter="all"                onclick="setFilter('log','all',this)">All</button>
+        <button class="filter-chip" data-filter="EP23-01-M1"               onclick="setFilter('log','EP23-01-M1',this)">Mod 1</button>
+        <button class="filter-chip" data-filter="EP23-01-M2"               onclick="setFilter('log','EP23-01-M2',this)">Mod 2</button>
+        <button class="filter-chip" data-filter="EP23-01-M3"               onclick="setFilter('log','EP23-01-M3',this)">Mod 3</button>
+        <button class="filter-chip" data-filter="EP23-01-HRSG"             onclick="setFilter('log','EP23-01-HRSG',this)">HRSG</button>
+        <button class="filter-chip" data-filter="EP23-01-Electrical"       onclick="setFilter('log','EP23-01-Electrical',this)">Electrical</button>
+        <button class="filter-chip" data-filter="EP23-01-Site"             onclick="setFilter('log','EP23-01-Site',this)">Site</button>
+        <button class="filter-chip" data-filter="flagged"                  onclick="setFilter('log','flagged',this)">⚑ Flagged</button>
+      </div>
+      <div class="log-list" id="log-log-list"><div class="log-loading">Loading…</div></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+<div class="save-notice" id="save-notice"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const PIN          = '2020';
+const SUPABASE_URL = 'https://ilywuzbjqhldxbomypmf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlseXd1emJqcWhsZHhib215cG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4Njg0MzIsImV4cCI6MjA5NTQ0NDQzMn0.xu3J_M9fSkVm44nq6wPV-w755fltavAwKWPLPjR4bEg';
+
+// ══════════════════════════════════════════════════════════
+// RAMS categories — physical work requiring method statement
+const RAMS_CATEGORIES = new Set(['Electrical','Mechanical','Civil / Structural','Instrumentation']);
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let attMode        = 'in';
+let attReason      = null;
+let attFilter      = 'all';
+let logFilter      = 'all';
+let foundSession   = null;
+let sessionOptions = [];
+let isOnline       = navigator.onLine;
+let activeSessions = [];
+let closingSession = null;
+let coPriority     = null;
+let coFlagType     = null;
+let workAssets     = new Set();
+let manAssets      = new Set();
+let manPriority    = null;
+let manFlagType    = null;
+
+const ASSET_LABELS = {
+  'EP23-01-M1':'Module 1','EP23-01-M2':'Module 2','EP23-01-M3':'Module 3',
+  'EP23-01-HRSG':'HRSG','EP23-01-Electrical':'Electrical','EP23-01-Site':'Site'
+};
+
+// ══════════════════════════════════════════════════════════
+// PIN
+// ══════════════════════════════════════════════════════════
+document.getElementById('pin-input').addEventListener('keydown', e=>{ if(e.key==='Enter') checkPin(); });
+function checkPin() {
+  if (document.getElementById('pin-input').value===PIN) {
+    document.getElementById('pin-gate').style.display='none';
+    document.getElementById('app').style.display='flex';
+    init();
+  } else {
+    document.getElementById('pin-error').textContent='Incorrect PIN — try again';
+    document.getElementById('pin-input').value=''; document.getElementById('pin-input').focus();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+function init() {
+  checkConnectivity();
+  window.addEventListener('online',  ()=>{ isOnline=true;  updateConnUI(); });
+  window.addEventListener('offline', ()=>{ isOnline=false; updateConnUI(); });
+  renderActiveSessions();
+  refreshLog('attendance'); refreshLog('maintenance'); refreshLog('log');
+  refreshStatusStrip();
+}
+
+// ══════════════════════════════════════════════════════════
+// CONNECTIVITY
+// ══════════════════════════════════════════════════════════
+async function checkConnectivity() {
+  try { const r=await fetch(`${SUPABASE_URL}/rest/v1/attendance_log?limit=1`,{headers:sbH()}); isOnline=r.ok; }
+  catch { isOnline=false; }
+  updateConnUI();
+}
+function updateConnUI() {
+  document.getElementById('conn-dot').className='conn-dot '+(isOnline?'online':'offline');
+  document.getElementById('conn-label').textContent=isOnline?'Online':'Offline';
+  document.getElementById('offline-banner').classList.toggle('visible',!isOnline);
+}
+function sbH() {
+  return {'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'};
+}
+
+// ══════════════════════════════════════════════════════════
+// TABS / SECTIONS
+// ══════════════════════════════════════════════════════════
+function switchTab(tab) {
+  const tabs=['attendance','maintenance','log'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+function toggleSection(id) { document.getElementById(id).classList.toggle('collapsed'); }
+
+// ══════════════════════════════════════════════════════════
+// ATTENDANCE
+// ══════════════════════════════════════════════════════════
+function setAttMode(mode) {
+  attMode=mode;
+  document.getElementById('mode-in-btn').className ='mode-btn'+(mode==='in' ?' active-in':'');
+  document.getElementById('mode-out-btn').className='mode-btn'+(mode==='out'?' active-out':'');
+  document.getElementById('att-in-form').style.display =mode==='in' ?'':'none';
+  document.getElementById('att-out-form').style.display=mode==='out'?'':'none';
+}
+function selectReason(btn) {
+  document.querySelectorAll('.reason-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected'); attReason=btn.dataset.reason;
+}
+async function signIn() {
+  const name =document.getElementById('att-name').value.trim();
+  const role =document.getElementById('att-role').value;
+  const notes=document.getElementById('att-notes').value.trim();
+  const retro=document.getElementById('att-retro-cb').checked;
+  if (!name)      { showNotice('Enter your name',true); return; }
+  if (!role)      { showNotice('Select your role',true); return; }
+  if (!attReason) { showNotice('Select a reason for visit',true); return; }
+  let checkInTime=new Date().toISOString();
+  if (retro) { const rv=document.getElementById('att-retro-in').value; if(!rv){showNotice('Enter sign-in time',true);return;} checkInTime=toISO(rv); }
+  const btn=document.getElementById('att-signin-btn'); btn.disabled=true; btn.textContent='Signing in…';
+  try {
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/attendance_log`,{method:'POST',headers:sbH(),body:JSON.stringify({name,role,reason:attReason,check_in_time:checkInTime,notes:notes||null,is_retrospective:retro})});
+    if(!r.ok) throw new Error(await r.text());
+    showNotice('Signed in ✓');
+    document.getElementById('att-name').value=''; document.getElementById('att-role').value='';
+    document.getElementById('att-notes').value=''; document.getElementById('att-retro-cb').checked=false;
+    document.getElementById('att-retro-area').style.display='none';
+    document.querySelectorAll('.reason-btn').forEach(b=>b.classList.remove('selected')); attReason=null;
+    refreshLog('attendance'); refreshStatusStrip();
+  } catch(e) { showNotice('Error — check connection',true); console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Sign In'; }
+}
+async function findSession() {
+  const name=document.getElementById('att-out-name').value.trim();
+  if (!name) { showNotice('Enter a name',true); return; }
+  const el=document.getElementById('session-results');
+  el.innerHTML='<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">Searching…</div>';
+  foundSession=null; sessionOptions=[];
+  document.getElementById('att-signout-btn').disabled=true;
+  try {
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/attendance_log?name=ilike.${encodeURIComponent('%'+name+'%')}&check_out_time=is.null&order=check_in_time.desc&limit=5`,{headers:sbH()});
+    const data=await r.json();
+    if (!data.length) { el.innerHTML='<div class="no-session">No open sessions found.</div>'; return; }
+    sessionOptions=data;
+    el.innerHTML=data.map((row,i)=>`<div class="session-found" id="sf-${i}" onclick="selectSession(${i})"><div class="sf-label">✓ Open session</div><div class="sf-name">${esc(row.name)}</div><div class="sf-meta">${formatDT(row.check_in_time)} · ${esc(row.reason||'—')} · ${esc(row.role||'—')}</div></div>`).join('');
+    if (data.length===1) selectSession(0);
+  } catch(e) { el.innerHTML='<div class="no-session">Error — check connection.</div>'; }
+}
+function selectSession(i) {
+  foundSession=sessionOptions[i];
+  document.querySelectorAll('[id^="sf-"]').forEach((el,j)=>el.classList.toggle('selected',j===i));
+  document.getElementById('att-signout-btn').disabled=false;
+}
+async function signOut() {
+  if (!foundSession) { showNotice('Find an open session first',true); return; }
+  const retro=document.getElementById('att-out-retro-cb').checked;
+  let checkOutTime=new Date().toISOString();
+  if (retro) { const rv=document.getElementById('att-retro-out').value; if(!rv){showNotice('Enter sign-out time',true);return;} checkOutTime=toISO(rv); }
+  const btn=document.getElementById('att-signout-btn'); btn.disabled=true; btn.textContent='Signing out…';
+  try {
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/attendance_log?id=eq.${foundSession.id}`,{method:'PATCH',headers:sbH(),body:JSON.stringify({check_out_time:checkOutTime})});
+    if(!r.ok) throw new Error(await r.text());
+    showNotice('Signed out ✓');
+    document.getElementById('att-out-name').value=''; document.getElementById('session-results').innerHTML='';
+    document.getElementById('att-out-retro-cb').checked=false; document.getElementById('att-out-retro-area').style.display='none';
+    foundSession=null; sessionOptions=[];
+    refreshLog('attendance'); refreshStatusStrip();
+  } catch(e) { showNotice('Error — check connection',true); }
+  finally { btn.disabled=false; btn.textContent='Sign Out'; }
+}
+
+// ══════════════════════════════════════════════════════════
+// RAMS VISIBILITY
+// ══════════════════════════════════════════════════════════
+function onCoCategoryChange() {
+  const cat=document.getElementById('co-category').value;
+  document.getElementById('co-rams-block').style.display=RAMS_CATEGORIES.has(cat)?'':'none';
+}
+function onManCategoryChange() {
+  const cat=document.getElementById('man-category').value;
+  document.getElementById('man-rams-block').style.display=RAMS_CATEGORIES.has(cat)?'':'none';
+}
+
+// ══════════════════════════════════════════════════════════
+// DATA FLAG
+// ══════════════════════════════════════════════════════════
+function toggleCoFlag(cb) {
+  document.getElementById('co-flag-fields').style.display=cb.checked?'':'none';
+  if (!cb.checked) { coFlagType=null; document.querySelectorAll('#co-flag-fields .flag-type-btn').forEach(b=>b.classList.remove('selected')); }
+}
+function toggleManFlag(cb) {
+  document.getElementById('man-flag-fields').style.display=cb.checked?'':'none';
+  if (!cb.checked) { manFlagType=null; document.querySelectorAll('#man-flag-fields .flag-type-btn').forEach(b=>b.classList.remove('selected')); }
+}
+function selectFlagType(btn,ctx) {
+  const grid=btn.closest('.flag-type-grid');
+  grid.querySelectorAll('.flag-type-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  if (ctx==='co') coFlagType=btn.dataset.flag;
+  else            manFlagType=btn.dataset.flag;
+}
+
+// ══════════════════════════════════════════════════════════
+// ACTIVE WORK
+// ══════════════════════════════════════════════════════════
+function toggleWorkAsset(btn) {
+  const id=btn.dataset.id;
+  if (workAssets.has(id)) { workAssets.delete(id); btn.classList.remove('selected'); }
+  else                    { workAssets.add(id);    btn.classList.add('selected'); }
+}
+async function startWork() {
+  const name=document.getElementById('work-name').value.trim();
+  const role=document.getElementById('work-role').value;
+  if (!name)            { showNotice('Enter your name',true); return; }
+  if (!role)            { showNotice('Select your role',true); return; }
+  if (!workAssets.size) { showNotice('Select at least one asset',true); return; }
+  const session={ id:crypto.randomUUID(), name, role, asset_ids:[...workAssets], start_time:new Date(), interval_id:null };
+  activeSessions.push(session);
+  renderActiveSessions(); updateWorkStrip();
+  document.getElementById('work-name').value=''; document.getElementById('work-role').value='';
+  workAssets.clear(); document.querySelectorAll('#work-asset-grid .asset-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('sec-work-new').classList.add('collapsed');
+  showNotice('Work session started ✓');
+}
+
+function renderActiveSessions() {
+  const area=document.getElementById('active-work-area');
+  // Clear intervals
+  activeSessions.forEach(s=>{ if(s.interval_id){clearInterval(s.interval_id);s.interval_id=null;} });
+  if (!activeSessions.length) {
+    area.innerHTML=`<div class="empty-active"><div class="empty-active-icon">🔧</div><div class="empty-active-text">No active sessions</div><div class="empty-active-sub">Start a session below to begin timing</div></div>`;
+    return;
+  }
+  area.innerHTML=`<div class="active-work-list">${activeSessions.map(s=>{
+    const tags=s.asset_ids.map(id=>`<span class="awc-asset-tag">${esc(ASSET_LABELS[id]||id)}</span>`).join('');
+    return `<div class="active-work-card" data-sid="${s.id}">
+      <div class="awc-header">
+        <div class="awc-assets">${tags}</div>
+        <div class="awc-timer-block"><div class="awc-timer" id="tmr-${s.id}">00:00:00</div><div class="awc-timer-label">elapsed</div></div>
+      </div>
+      <div class="awc-name">${esc(s.name)}</div>
+      <div class="awc-role">${esc(s.role)}</div>
+      <div class="awc-since">Started ${formatDT(s.start_time.toISOString())}</div>
+      <button class="awc-stop-btn" onclick="openCloseout('${s.id}')">Stop & Record ▸</button>
+    </div>`;
+  }).join('')}</div>`;
+  // Start timers
+  activeSessions.forEach(s=>{
+    const el=document.getElementById('tmr-'+s.id);
+    if (!el) return;
+    const tick=()=>{ const ms=Date.now()-s.start_time; const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),sec=Math.floor((ms%60000)/1000); el.textContent=`${pad(h)}:${pad(m)}:${pad(sec)}`; };
+    tick(); s.interval_id=setInterval(tick,1000);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// CLOSE-OUT
+// ══════════════════════════════════════════════════════════
+function openCloseout(sid) {
+  closingSession=activeSessions.find(s=>s.id===sid); if(!closingSession) return;
+  const now=new Date();
+  document.getElementById('co-title').textContent=`Close out: ${closingSession.name}`;
+  document.getElementById('co-meta').textContent=closingSession.asset_ids.map(id=>ASSET_LABELS[id]||id).join(', ')+' · '+closingSession.role;
+  document.getElementById('co-duration').textContent=fmtDur(closingSession.start_time.toISOString(),now.toISOString());
+  document.getElementById('co-started').textContent=formatDT(closingSession.start_time.toISOString());
+  // Reset
+  document.getElementById('co-category').value=''; document.getElementById('co-rams-block').style.display='none';
+  document.getElementById('co-rams-code').value=''; document.getElementById('co-rams-title').value='';
+  document.getElementById('co-description').value='';
+  document.getElementById('co-grafana-cb').checked=false; document.getElementById('co-grafana-fields').style.display='none';
+  document.getElementById('co-flag-cb').checked=false; document.getElementById('co-flag-fields').style.display='none';
+  document.querySelectorAll('#co-priority-grid .priority-btn').forEach(b=>b.className='priority-btn');
+  document.querySelectorAll('#co-flag-fields .flag-type-btn').forEach(b=>b.classList.remove('selected'));
+  coPriority=null; coFlagType=null;
+  document.getElementById('closeout-overlay').classList.add('open');
+}
+function cancelCloseout() { document.getElementById('closeout-overlay').classList.remove('open'); closingSession=null; coPriority=null; coFlagType=null; }
+function selectCoPriority(btn) {
+  document.querySelectorAll('#co-priority-grid .priority-btn').forEach(b=>b.className='priority-btn');
+  btn.classList.add('sel-'+btn.dataset.priority.toLowerCase()); coPriority=btn.dataset.priority;
+}
+function toggleCoGrafana(cb) {
+  document.getElementById('co-grafana-fields').style.display=cb.checked?'':'none';
+  if (cb.checked&&closingSession) {
+    document.getElementById('co-grafana-start').value=localFmt(closingSession.start_time);
+    document.getElementById('co-grafana-end').value=nowLocal();
+  }
+}
+
+async function submitCloseout() {
+  const category=document.getElementById('co-category').value;
+  const desc    =document.getElementById('co-description').value.trim();
+  if (!category)   { showNotice('Select a category',true); return; }
+  if (!desc)       { showNotice('Enter a description',true); return; }
+  if (!coPriority) { showNotice('Select a priority',true); return; }
+
+  // RAMS check
+  const needsRams=RAMS_CATEGORIES.has(category);
+  const ramsCode =document.getElementById('co-rams-code').value.trim();
+  const ramsTitle=document.getElementById('co-rams-title').value.trim();
+  if (needsRams&&!ramsCode)  { showNotice('Enter the RAMS code',true); return; }
+  if (needsRams&&!ramsTitle) { showNotice('Enter the RAMS title',true); return; }
+
+  // Flag
+  const flagged  =document.getElementById('co-flag-cb').checked;
+  const flagNotes=document.getElementById('co-flag-notes').value.trim();
+  if (flagged&&!coFlagType)  { showNotice('Select a flag type',true); return; }
+  if (flagged&&!flagNotes)   { showNotice('Describe the data impact',true); return; }
+
+  const grafana=document.getElementById('co-grafana-cb').checked;
+  const endTime=new Date();
+
+  const records=closingSession.asset_ids.map(assetId=>({
+    asset_id:assetId, reported_by:closingSession.name, role:closingSession.role,
+    category, description:desc, priority:coPriority, status:'Open',
+    work_start:closingSession.start_time.toISOString(), work_end:endTime.toISOString(),
+    duration_mins:Math.round((endTime-closingSession.start_time)/60000),
+    is_retrospective:false,
+    rams_code:needsRams?ramsCode:null, rams_title:needsRams?ramsTitle:null,
+    data_flagged:flagged, flag_type:flagged?coFlagType:null, flag_notes:flagged?flagNotes:null,
+    ...(grafana&&{
+      linked_time_start:toISO(document.getElementById('co-grafana-start').value||localFmt(closingSession.start_time)),
+      linked_time_end:  toISO(document.getElementById('co-grafana-end').value  ||localFmt(endTime))
+    })
+  }));
+
+  const btn=document.getElementById('co-submit-btn'); btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/maintenance_log`,{method:'POST',headers:sbH(),body:JSON.stringify(records)});
+    if(!r.ok) throw new Error(await r.text());
+    if (closingSession.interval_id) clearInterval(closingSession.interval_id);
+    activeSessions=activeSessions.filter(s=>s.id!==closingSession.id);
+    cancelCloseout(); renderActiveSessions(); updateWorkStrip();
+    showNotice(`Recorded ✓ — ${records.length} asset${records.length>1?'s':''}`);
+    refreshLog('maintenance'); refreshLog('log');
+  } catch(e) { showNotice('Error — check connection',true); console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Complete & Save ▸'; }
+}
+
+// ══════════════════════════════════════════════════════════
+// MANUAL ENTRY
+// ══════════════════════════════════════════════════════════
+function toggleManAsset(btn) {
+  const id=btn.dataset.id;
+  if (manAssets.has(id)){manAssets.delete(id);btn.classList.remove('selected');}
+  else{manAssets.add(id);btn.classList.add('selected');}
+}
+function selectManPriority(btn) {
+  document.querySelectorAll('#man-priority-grid .priority-btn').forEach(b=>b.className='priority-btn');
+  btn.classList.add('sel-'+btn.dataset.priority.toLowerCase()); manPriority=btn.dataset.priority;
+}
+async function submitManual() {
+  const name    =document.getElementById('man-name').value.trim();
+  const role    =document.getElementById('man-role').value;
+  const category=document.getElementById('man-category').value;
+  const desc    =document.getElementById('man-description').value.trim();
+  const startV  =document.getElementById('man-start').value;
+  const endV    =document.getElementById('man-end').value;
+  if (!name)          { showNotice('Enter your name',true); return; }
+  if (!role)          { showNotice('Select your role',true); return; }
+  if (!manAssets.size){ showNotice('Select at least one asset',true); return; }
+  if (!category)      { showNotice('Select a category',true); return; }
+  if (!desc)          { showNotice('Enter a description',true); return; }
+  if (!manPriority)   { showNotice('Select a priority',true); return; }
+
+  const needsRams=RAMS_CATEGORIES.has(category);
+  const ramsCode =document.getElementById('man-rams-code').value.trim();
+  const ramsTitle=document.getElementById('man-rams-title').value.trim();
+  if (needsRams&&!ramsCode)  { showNotice('Enter the RAMS code',true); return; }
+  if (needsRams&&!ramsTitle) { showNotice('Enter the RAMS title',true); return; }
+
+  const flagged  =document.getElementById('man-flag-cb').checked;
+  const flagNotes=document.getElementById('man-flag-notes').value.trim();
+  if (flagged&&!manFlagType) { showNotice('Select a flag type',true); return; }
+  if (flagged&&!flagNotes)   { showNotice('Describe the data impact',true); return; }
+
+  const workStart=startV?toISO(startV):null;
+  const workEnd  =endV  ?toISO(endV)  :null;
+  const durMins  =workStart&&workEnd?Math.round((new Date(workEnd)-new Date(workStart))/60000):null;
+
+  const records=[...manAssets].map(assetId=>({
+    asset_id:assetId, reported_by:name, role, category, description:desc, priority:manPriority,
+    status:'Open', work_start:workStart, work_end:workEnd, duration_mins:durMins, is_retrospective:true,
+    rams_code:needsRams?ramsCode:null, rams_title:needsRams?ramsTitle:null,
+    data_flagged:flagged, flag_type:flagged?manFlagType:null, flag_notes:flagged?flagNotes:null,
+    ...(workStart&&workEnd&&{linked_time_start:workStart,linked_time_end:workEnd})
+  }));
+
+  const btn=document.getElementById('man-submit-btn'); btn.disabled=true; btn.textContent='Submitting…';
+  try {
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/maintenance_log`,{method:'POST',headers:sbH(),body:JSON.stringify(records)});
+    if(!r.ok) throw new Error(await r.text());
+    showNotice(`Submitted ✓ — ${records.length} asset${records.length>1?'s':''}`);
+    ['man-name','man-role','man-category','man-description','man-start','man-end','man-rams-code','man-rams-title','man-flag-notes'].forEach(id=>document.getElementById(id).value='');
+    document.querySelectorAll('#man-asset-grid .asset-btn').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('#man-priority-grid .priority-btn').forEach(b=>b.className='priority-btn');
+    document.getElementById('man-flag-cb').checked=false; document.getElementById('man-flag-fields').style.display='none';
+    document.getElementById('man-rams-block').style.display='none';
+    manAssets.clear(); manPriority=null; manFlagType=null;
+    refreshLog('log');
+  } catch(e) { showNotice('Error — check connection',true); console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Submit Entry'; }
+}
+
+// ══════════════════════════════════════════════════════════
+// FILTERS & LOGS
+// ══════════════════════════════════════════════════════════
+function setFilter(tab,val,btn) {
+  if (tab==='att') attFilter=val; else if(tab==='log') logFilter=val;
+  const prefix=tab;
+  document.querySelectorAll(`#${prefix}-filter .filter-chip`).forEach(b=>b.classList.toggle('active',b.dataset.filter===val));
+  refreshLog(tab==='att'?'attendance':tab);
+}
+async function refreshLog(type) {
+  if (type==='attendance') await loadAttLog();
+  else if (type==='maintenance') await loadTodayLog();
+  else if (type==='log') await loadFullLog();
+}
+
+async function loadAttLog() {
+  const el=document.getElementById('att-log-list'); el.innerHTML='<div class="log-loading">Loading…</div>';
+  let url=`${SUPABASE_URL}/rest/v1/attendance_log?order=check_in_time.desc&limit=20`;
+  if (attFilter==='on-site') url+='&check_out_time=is.null';
+  try { const r=await fetch(url,{headers:sbH()}); if(!r.ok) throw new Error(); renderAttLog(await r.json()); }
+  catch { el.innerHTML='<div class="log-empty">Could not load records</div>'; }
+}
+function renderAttLog(rows) {
+  const el=document.getElementById('att-log-list');
+  if (!rows.length) { el.innerHTML='<div class="log-empty">No attendance records yet</div>'; return; }
+  el.innerHTML=rows.map(row=>{
+    const outT=row.check_out_time?formatDT(row.check_out_time):null;
+    const dur=outT?fmtDur(row.check_in_time,row.check_out_time):null;
+    return `<div class="log-card">
+      <div class="log-card-header">
+        <div class="log-card-left"><div class="log-card-eyebrow">${esc(row.reason||'—')}</div><div class="log-card-name">${esc(row.name)}</div></div>
+        <div class="log-card-time">${formatDT(row.check_in_time)}</div>
+      </div>
+      <div class="log-card-meta">
+        ${outT?`<span class="status-badge badge-dim">Out · ${dur}</span>`:'<span class="status-badge badge-success">On site</span>'}
+        ${row.role?`<span class="status-badge badge-dim">${esc(row.role)}</span>`:''}
+        ${outT?`<span class="status-badge badge-dim">→ ${outT}</span>`:''}
+        ${row.is_retrospective?'<span class="status-badge badge-retro">Retrospective</span>':''}
+      </div>
+      ${row.notes?`<div class="log-card-body">${esc(row.notes)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function loadTodayLog() {
+  const el=document.getElementById('maint-log-list'); el.innerHTML='<div class="log-loading">Loading…</div>';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const url=`${SUPABASE_URL}/rest/v1/maintenance_log?order=created_at.desc&created_at=gte.${today.toISOString()}&limit=40`;
+  try { const r=await fetch(url,{headers:sbH()}); if(!r.ok) throw new Error(); renderMaintLog(await r.json(),'maint-log-list'); }
+  catch { el.innerHTML='<div class="log-empty">Could not load records</div>'; }
+}
+
+async function loadFullLog() {
+  const el=document.getElementById('log-log-list'); el.innerHTML='<div class="log-loading">Loading…</div>';
+  let url=`${SUPABASE_URL}/rest/v1/maintenance_log?order=created_at.desc&limit=40`;
+  if (logFilter==='flagged')   url=`${SUPABASE_URL}/rest/v1/maintenance_log?data_flagged=eq.true&order=created_at.desc&limit=40`;
+  else if (logFilter!=='all')  url+=`&asset_id=eq.${encodeURIComponent(logFilter)}`;
+  try { const r=await fetch(url,{headers:sbH()}); if(!r.ok) throw new Error(); renderMaintLog(await r.json(),'log-log-list'); }
+  catch { el.innerHTML='<div class="log-empty">Could not load records</div>'; }
+}
+
+function renderMaintLog(rows,elId) {
+  const el=document.getElementById(elId);
+  if (!rows.length) { el.innerHTML='<div class="log-empty">No records yet</div>'; return; }
+  const pb=p=>p==='Critical'?'badge-danger':p==='High'?'badge-warning':p==='Medium'?'badge-orange':'badge-dim';
+  el.innerHTML=rows.map(row=>{
+    const label=ASSET_LABELS[row.asset_id]||row.asset_id;
+    const dur=row.duration_mins!=null?fmtMins(row.duration_mins):(row.work_start&&row.work_end?fmtDur(row.work_start,row.work_end):null);
+    const flagged=row.data_flagged;
+    return `<div class="log-card${flagged?' flagged':''}">
+      <div class="log-card-header">
+        <div class="log-card-left"><div class="log-card-eyebrow">${esc(label)} · ${esc(row.category||'—')}</div><div class="log-card-name">${esc(row.reported_by)}</div></div>
+        <div class="log-card-time">${formatDT(row.created_at)}</div>
+      </div>
+      <div class="log-card-meta">
+        <span class="status-badge ${pb(row.priority)}">${esc(row.priority||'—')}</span>
+        <span class="status-badge badge-dim">${esc(row.status||'Open')}</span>
+        ${dur?`<span class="status-badge badge-warning">⏱ ${dur}</span>`:''}
+        ${row.role?`<span class="status-badge badge-dim">${esc(row.role)}</span>`:''}
+        ${row.rams_code?`<span class="status-badge badge-orange">📋 ${esc(row.rams_code)}</span>`:''}
+        ${flagged?`<span class="status-badge badge-flag">⚑ ${esc(row.flag_type||'Flagged')}</span>`:''}
+        ${(row.linked_time_start||row.linked_time_end)?'<span class="status-badge badge-dim">Grafana ⏱</span>':''}
+        ${row.is_retrospective?'<span class="status-badge badge-retro">Retrospective</span>':''}
+      </div>
+      <div class="log-card-body">${esc(row.description||'')}</div>
+      ${flagged?`<div class="log-card-flag"><div class="log-card-flag-type">⚑ ${esc(row.flag_type||'Non-standard data')} — Grafana data may be unrepresentative during this window</div>${row.flag_notes?esc(row.flag_notes):''}</div>`:''}
+      ${row.rams_code?`<div class="help-text" style="margin-top:7px;">RAMS: ${esc(row.rams_code)} — ${esc(row.rams_title||'')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// STATUS STRIP
+// ══════════════════════════════════════════════════════════
+async function refreshStatusStrip() {
+  try {
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/attendance_log?check_out_time=is.null&select=id`,{headers:sbH()});
+    if(!r.ok) throw new Error();
+    const n=(await r.json()).length;
+    const pill=document.getElementById('pill-site');
+    pill.classList.toggle('active',n>0);
+    pill.innerHTML=`<span class="pdot"></span> ${n>0?n+' on site':'Site clear'}`;
+  } catch {}
+  updateWorkStrip();
+}
+function updateWorkStrip() {
+  const pill=document.getElementById('pill-work');
+  const n=activeSessions.length;
+  pill.classList.toggle('active',n>0);
+  pill.innerHTML=`<span class="pdot"></span> ${n>0?n+' active job'+(n>1?'s':''):'No active jobs'}`;
+}
+
+// ══════════════════════════════════════════════════════════
+// RETRO TOGGLE
+// ══════════════════════════════════════════════════════════
+function toggleRetroFields(cbId,areaId,firstInputId) {
+  const checked=document.getElementById(cbId).checked;
+  document.getElementById(areaId).style.display=checked?'':'none';
+  if (checked) document.getElementById(firstInputId).value=nowLocal();
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════
+function nowLocal() { return localFmt(new Date()); }
+function localFmt(d) { const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+function toISO(s) { return new Date(s).toISOString(); }
+function pad(n) { return String(n).padStart(2,'0'); }
+function formatDT(iso) {
+  if (!iso) return '—';
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDur(s,e) { const ms=new Date(e)-new Date(s); if(ms<0) return '—'; const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000); return h>0?`${h}h ${m}m`:`${m}m`; }
+function fmtMins(m) { if(m==null||m<0) return '—'; const h=Math.floor(m/60),min=m%60; return h>0?`${h}h ${min}m`:`${min}m`; }
+function esc(s) { if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showNotice(text,isError=false) {
+  const el=document.getElementById('save-notice');
+  el.textContent=text; el.className='save-notice'+(isError?' error':'');
+  el.style.opacity='1'; setTimeout(()=>el.style.opacity='0',isError?2500:1800);
+}
+</script>
+</body>
+</html>
